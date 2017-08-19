@@ -29,7 +29,7 @@ PROJECTRELATIVE_PATH =
 O = $(PROJECT_OUTPUT_DIR)/$(CONFIGNAME)/$(PROJECTRELATIVE_PATH)
 
 # Object files for local .cc, .msg and .sm files
-OBJS = $O/final.o
+OBJS = $O/coverter.o $O/wifi.o $O/zigbee.o
 
 # Message files
 MSGFILES =
