@@ -4,70 +4,44 @@
 using namespace omnetpp;
 class mZigBee : public cSimpleModule
 {
-  private:
+private:
+    long numSent;
+    long numReceived;
+    cOutVector numSentVector;
     cMessage *event;
-    cMessage *tictocMsg;
-  public:
+    char msgname[131];
+public:
     mZigBee();
     virtual ~mZigBee();
-  protected:
-    virtual void forwardMessage(cMessage *msg);
+protected:
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
 };
 mZigBee::mZigBee()
 {
-    event = tictocMsg = nullptr;
+    event = nullptr;
 }
 mZigBee::~mZigBee()
 {
-    cancelAndDelete(event);
-    delete tictocMsg;
+    delete event;
 }
 void mZigBee::initialize()
 {
     event = new cMessage("event");
-    tictocMsg = nullptr;
-    if (strcmp("wifi", getName()) == 0) {
-        EV << "Scheduling first send to t=5.0s\n";
-        scheduleAt(5.0, event);
-        tictocMsg = new cMessage("tictocMsg");
-    }
+    WATCH(numSent);
+    numSentVector.setName("Sent Vector");
+    sprintf(msgname, "ZigBee Message ");
+    scheduleAt(0.00171, event);
 }
 void mZigBee::handleMessage(cMessage *msg)
 {
     if (msg == event) {
-        EV << "Wait period is over, sending back message\n";
-        forwardMessage(tictocMsg);
-        tictocMsg = nullptr;
+        EV << "Wait period is over, send message\n";
+        send(new cMessage(msgname), "gate$o", 0);
+        cancelEvent(event);
+        scheduleAt(simTime()+0.00171, event);
     }
-    else {
-        // "Lose" the message with 0.1 probability:
-        if (uniform(0, 1) < 0.1) {
-            EV << "\"Losing\" message\n";
-            delete msg;
-        }
-        else {
-            // The "delayTime" module parameter can be set to values like
-            // "exponential(5)" (tictoc7.ned, omnetpp.ini), and then here
-            // we'll get a different delay every time.
-            simtime_t delay = par("delayTime");
-            EV << "Message arrived, starting to wait " << delay << " secs...\n";
-            tictocMsg = msg;
-            scheduleAt(simTime()+0.004, event);
-        }
-    }
-}
 
-void mZigBee::forwardMessage(cMessage *msg)
-{
-    // In this example, we just pick a random gate to send it on.
-    // We draw a random number between 0 and the size of gate `out[]'.
-    int n = gateSize("out");
-    int k = intuniform(0, n-1);
-
-    EV << "Forwarding message " << msg->getArrivalGate() << "]\n";
-    EV << "Forwarding message " << msg << " on port out[" << k << "]\n";
-    send(msg, "out", k);
+//    delete msg;
 }
 Define_Module(mZigBee);

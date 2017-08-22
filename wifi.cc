@@ -1,75 +1,66 @@
 #include <stdio.h>
 #include <string.h>
 #include <omnetpp.h>
+
 using namespace omnetpp;
 
 class mWiFi : public cSimpleModule
 {
-  private:
+private:
+    long numSent;
+    long numReceived;
+    int nPackages;
+    cOutVector numSentVector;
     cMessage *event;
-    cMessage *tictocMsg;
-  public:
-    mWiFi();
-    virtual ~mWiFi();
-  protected:
-    virtual void forwardMessage(cMessage *msg);
-    virtual void initialize() override;
+    void scheduleMessage();
+    char msgname[2358];
+public:
+    mWiFi();   // constructor
+    virtual ~mWiFi(); // destructor
+protected:
+    virtual void initialize() override; // @Override
     virtual void handleMessage(cMessage *msg) override;
 };
 mWiFi::mWiFi()
 {
-    event = tictocMsg = nullptr;
+    event = nullptr;
 }
 mWiFi::~mWiFi()
 {
-    cancelAndDelete(event);
-    delete tictocMsg;
+        delete event;
 }
 void mWiFi::initialize()
 {
+    numSent = 0;
+    numReceived = 0;
+    nPackages = par("totalPackages");
+    WATCH(numSent);
+    WATCH(numReceived);
+    numSentVector.setName("Sent Vector");
     event = new cMessage("event");
-    tictocMsg = nullptr;
-    if (strcmp("wifi", getName()) == 0) {
-        EV << "Scheduling first send to t=5.0s\n";
-        scheduleAt(5.0, event);
-        tictocMsg = new cMessage("tictocMsg");
+
+    sprintf(msgname, "WiFi Message ");
+    if (par("sendMsgOnInit").boolValue() == true) {
+        scheduleAt(0.004, event);
     }
 }
 void mWiFi::handleMessage(cMessage *msg)
 {
     if (msg == event) {
-        EV << "Wait period is over, sending back message\n";
-        forwardMessage(tictocMsg);
-        tictocMsg = nullptr;
+        EV << "Wait period is over, send message\n";
+        send(new cMessage(msgname), "gate$o", 0);
+        cancelEvent(event);
+        scheduleAt(simTime()+0.004, event);
     }
-    else {
-        // "Lose" the message with 0.1 probability:
-        if (uniform(0, 1) < 0.1) {
-            EV << "\"Losing\" message\n";
-            delete msg;
-        }
-        else {
-            // The "delayTime" module parameter can be set to values like
-            // "exponential(5)" (tictoc7.ned, omnetpp.ini), and then here
-            // we'll get a different delay every time.
-            simtime_t delay = par("delayTime");
-            EV << "Message arrived, starting to wait " << delay << " secs...\n";
-            tictocMsg = msg;
-            scheduleAt(simTime()+0.004, event);
-        }
-    }
+
+//    delete msg;
 }
 
-void mWiFi::forwardMessage(cMessage *msg)
+void mWiFi::scheduleMessage()
 {
-    // In this example, we just pick a random gate to send it on.
-    // We draw a random number between 0 and the size of gate `out[]'.
-    int n = gateSize("out");
-    int k = intuniform(0, n-1);
-
-    EV << "Forwarding message " << msg->getArrivalGate() << "]\n";
-    EV << "Forwarding message " << msg << " on port out[" << k << "]\n";
-    send(msg, "out", k);
+    simtime_t tmp = par("delayTime");
+    EV << "(WiFi) normal distribution value : "<< tmp << "\n";
+    scheduleAt(simTime()+tmp, new cMessage("WiFi Message"));
 }
 Define_Module(mWiFi);
 
