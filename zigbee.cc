@@ -5,22 +5,23 @@ using namespace omnetpp;
 class mZigBee : public cSimpleModule
 {
 private:
-    long numSent;
-    long numReceived;
+    // Declare an event, events are a self-send notification to this module
     cOutVector numSentVector;
     cMessage *event;
     char msgname[131];
 public:
     mZigBee();
     virtual ~mZigBee();
-protected:
+protected:  // functions from cSimpleModule
     virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
 };
+// Set event to NULL
 mZigBee::mZigBee()
 {
     event = nullptr;
 }
+// Free memory
 mZigBee::~mZigBee()
 {
     delete event;
@@ -28,8 +29,6 @@ mZigBee::~mZigBee()
 void mZigBee::initialize()
 {
     event = new cMessage("event");
-    WATCH(numSent);
-    numSentVector.setName("Sent Vector");
     sprintf(msgname, "ZigBee Message ");
     scheduleAt(0.00171, event);
 }
@@ -41,7 +40,5 @@ void mZigBee::handleMessage(cMessage *msg)
         cancelEvent(event);
         scheduleAt(simTime()+0.00171, event);
     }
-
-//    delete msg;
 }
 Define_Module(mZigBee);

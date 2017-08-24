@@ -2,8 +2,8 @@ simple mConverter
 {
     parameters:
         bool sendMsgOnInit = default(false);
+        int probability;
         @display("i=device/antennatower_vl");
-        @display("p=50,79;r=150");
     gates:
         inout gate[];
 }
@@ -11,10 +11,8 @@ simple mConverter
 simple mWiFi
 {
     parameters:
-        int totalPackages = default(5);
-        volatile double delayTime @unit(s);
         @display("i=device/wifilaptop_vl");
-        bool sendMsgOnInit = true;   // Tic modules should send a message on init
+        bool sendMsgOnInit = true;
     gates:
         inout gate[];
 }
@@ -23,17 +21,24 @@ simple mZigBee
 {
     parameters:
         bool sendMsgOnInit = default(false);
-        @display("i=device/card_vl");  // Toc modules should NOT send a message on init
+        @display("i=device/card_vl");
     gates:
         inout gate[];
 }
 
-network Tictoc1
+network RedHet
 {
+    @display("bgb=747,177");
     submodules:
-        wifi: mWiFi;
-        zigbee: mZigBee;
-        converter: mConverter;
+        wifi: mWiFi {
+            @display("p=683,94");
+        }
+        zigbee: mZigBee {
+            @display("p=91,94");
+        }
+        converter: mConverter {
+            @display("p=377,94");
+        }
     connections:
         wifi.gate++ <--> {  delay = 4ms; } <--> converter.gate++;
         zigbee.gate++ <--> {  delay = 1.71ms; } <--> converter.gate++;

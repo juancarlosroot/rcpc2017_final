@@ -7,60 +7,54 @@ using namespace omnetpp;
 class mWiFi : public cSimpleModule
 {
 private:
-    long numSent;
-    long numReceived;
-    int nPackages;
-    cOutVector numSentVector;
+    // Declare an event, events are a self-send notification to this module
     cMessage *event;
-    void scheduleMessage();
+    // Package length
     char msgname[2358];
 public:
     mWiFi();   // constructor
     virtual ~mWiFi(); // destructor
-protected:
-    virtual void initialize() override; // @Override
+protected: // functions from cSimpleModule
+    virtual void initialize() override;
     virtual void handleMessage(cMessage *msg) override;
 };
+// Set event to NULL
 mWiFi::mWiFi()
 {
     event = nullptr;
 }
+// Free memory
 mWiFi::~mWiFi()
 {
-        delete event;
+    delete event;
 }
+// Initialize variable event
+// Set a static anonymous Message String
+// Get parameter sendMsgOnInit
+//
 void mWiFi::initialize()
 {
-    numSent = 0;
-    numReceived = 0;
-    nPackages = par("totalPackages");
-    WATCH(numSent);
-    WATCH(numReceived);
-    numSentVector.setName("Sent Vector");
     event = new cMessage("event");
-
     sprintf(msgname, "WiFi Message ");
     if (par("sendMsgOnInit").boolValue() == true) {
+        //send an event at 0.004 (simulation time)
         scheduleAt(0.004, event);
     }
 }
+
+// Used for manage arrival messages
 void mWiFi::handleMessage(cMessage *msg)
 {
     if (msg == event) {
         EV << "Wait period is over, send message\n";
+        // send message
         send(new cMessage(msgname), "gate$o", 0);
+        // cancel event
         cancelEvent(event);
+        // get simulation time and sum 0.004
         scheduleAt(simTime()+0.004, event);
     }
-
-//    delete msg;
 }
-
-void mWiFi::scheduleMessage()
-{
-    simtime_t tmp = par("delayTime");
-    EV << "(WiFi) normal distribution value : "<< tmp << "\n";
-    scheduleAt(simTime()+tmp, new cMessage("WiFi Message"));
-}
+// Declare module (same as .ned file)
 Define_Module(mWiFi);
 
